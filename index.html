@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Huellas del Valle, agenda de citas</title>
+  <meta name="description" content="Agendamiento de citas de la Clínica Veterinaria Huellas del Valle S.A.S.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Young+Serif&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="barra">
+  <div class="barra__marca">
+    <span class="barra__nombre">Huellas del Valle</span>
+    <span class="barra__sub">Clínica veterinaria en Cali</span>
+  </div>
+  <!-- Navegación entre las dos vistas del sistema -->
+  <nav class="pestanas" role="tablist" aria-label="Vistas del sistema">
+    <button class="pestana" role="tab" id="tab-agendar" aria-controls="vista-agendar" aria-selected="true">Agendar cita</button>
+    <button class="pestana" role="tab" id="tab-agenda" aria-controls="vista-agenda" aria-selected="false">Agenda del día</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ================= VISTA 1: AGENDAR UNA CITA ================= -->
+  <section id="vista-agendar" class="vista" role="tabpanel" aria-labelledby="tab-agendar">
+
+    <figure class="portada">
+      <img src="assets/banner.jpg" alt="Un perro y un gato juntos sobre una alfombra con huellas" width="1408" height="768">
+    </figure>
+
+    <div class="agendar">
+      <div class="agendar__form">
+        <h1>Agenda una cita</h1>
+        <p class="intro">Consulta general, vacunación, baño o ecografía para perros y gatos. Te respondemos al instante si hay cupo.</p>
+
+        <!-- Los "name" son los campos que recibe el webhook de Make. No cambiarlos sin cambiar el escenario. -->
+        <form id="form-cita" novalidate>
+          <fieldset>
+            <legend>Dueño</legend>
+            <div class="fila">
+              <label>Nombre completo
+                <input name="propietario" autocomplete="name" required>
+              </label>
+              <label>Correo
+                <input name="correo" type="email" autocomplete="email" required>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Mascota</legend>
+            <div class="fila">
+              <label>Nombre
+                <input name="mascota" required>
+              </label>
+              <div class="grupo" role="radiogroup" aria-label="Especie">
+                <span class="grupo__titulo">Especie</span>
+                <div class="segmentos">
+                  <label class="segmento"><input type="radio" name="especie" value="perro" required><span>Perro</span></label>
+                  <label class="segmento"><input type="radio" name="especie" value="gato"><span>Gato</span></label>
+                </div>
+              </div>
+            </div>
+            <label>Servicio
+              <select name="servicio" required>
+                <option value="">Elige un servicio</option>
+                <option>Consulta general</option>
+                <option>Vacunación</option>
+                <option>Baño</option>
+                <option>Ecografía</option>
+              </select>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Cuándo</legend>
+            <div class="fila">
+              <!-- type="date" entrega siempre AAAA-MM-DD, el mismo formato de la hoja -->
+              <label>Fecha
+                <input name="fecha" type="date" required>
+              </label>
+              <!-- Lista cerrada: la hora sale siempre como HH:MM (08:00, no 8:00) -->
+              <label>Hora
+                <select name="hora" required>
+                  <option value="">Elige una hora</option>
+                  <option>08:00</option>
+                  <option>09:00</option>
+                  <option>10:00</option>
+                  <option>11:00</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          <p class="aviso-form" id="aviso-form" role="alert" hidden></p>
+          <button class="boton" id="btn-enviar" type="submit">Agendar cita</button>
+        </form>
+
+        <!-- Lo que respondió el escenario 1 de Make -->
+        <div id="respuesta" class="respuesta" role="status" aria-live="polite" hidden></div>
+      </div>
+
+      <!-- Cupos de cada franja para la fecha elegida (se leen de la hoja "agenda") -->
+      <aside class="cupos" aria-labelledby="cupos-titulo">
+        <h2 id="cupos-titulo">Cupos del día</h2>
+        <p class="cupos__fecha" id="cupos-fecha">Elige una fecha para ver qué horas quedan libres.</p>
+        <ol class="franjas" id="lista-franjas"></ol>
+        <p class="nota">Cada franja atiende 3 mascotas. El sistema confirma el cupo al agendar.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================= VISTA 2: AGENDA DEL DÍA ================= -->
+  <section id="vista-agenda" class="vista" role="tabpanel" aria-labelledby="tab-agenda" hidden>
+    <div class="agenda__cabecera">
+      <div>
+        <h1>Agenda del día</h1>
+        <p class="intro" id="agenda-resumen">Elige una fecha para ver sus citas.</p>
+      </div>
+      <div class="agenda__controles">
+        <label>Fecha
+          <input id="agenda-fecha" type="date">
+        </label>
+        <button class="boton boton--claro" id="btn-actualizar" type="button">Actualizar</button>
+      </div>
+    </div>
+    <div id="agenda-lista" class="agenda"></div>
+  </section>
+
+</main>
+
+<footer class="pie">
+  Clínica Veterinaria Huellas del Valle S.A.S., Cali
+</footer>
+
+<!-- Se abre cuando el escenario responde REQUIERE CONFIRMACION (caso C5) -->
+<dialog id="dlg-confirmar" aria-labelledby="dlg-titulo">
+  <h2 id="dlg-titulo">Esta mascota ya tiene una cita ese día</h2>
+  <p id="dlg-texto"></p>
+  <div class="dlg__acciones">
+    <button id="btn-cancelar" type="button" class="boton boton--claro">No, cancelar</button>
+    <button id="btn-confirmar" type="button" class="boton">Sí, agendar también esta</button>
+  </div>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
