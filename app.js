@@ -116,7 +116,11 @@ function textoLibres(libres) {
   return `Quedan ${libres}`;
 }
 
+// Si se piden dos lecturas seguidas, solo se dibuja la más reciente.
+let turnoCupos = 0;
+
 async function cargarCupos() {
+  const turno = ++turnoCupos;
   const fecha = form.fecha.value;
   listaFranjas.innerHTML = "";
   if (!fecha) {
@@ -129,10 +133,13 @@ async function cargarCupos() {
   try {
     filas = (await leerHoja("agenda")).filter((f) => f.fecha === fecha);
   } catch (e) {
+    if (turno !== turnoCupos) return;
     cuposFecha.textContent = "No se pudo leer la agenda. Revisa que la hoja esté compartida como lector para cualquier persona con el enlace.";
     return;
   }
 
+  if (turno !== turnoCupos) return;
+  listaFranjas.innerHTML = "";
   cuposFecha.textContent = fechaLarga(fecha);
   if (!filas.length) {
     listaFranjas.append(el("li", "vacio", "No hay franjas abiertas para esta fecha. Puedes enviar la solicitud y quedará registrada para revisión."));
@@ -308,7 +315,10 @@ function nombreEstado(resultado) {
   return resultado || "Sin estado";
 }
 
+let turnoAgenda = 0;
+
 async function cargarAgenda() {
+  const turno = ++turnoAgenda;
   const fecha = agendaFecha.value;
   agendaLista.innerHTML = "";
   if (!fecha) { agendaResumen.textContent = "Elige una fecha para ver sus citas."; return; }
@@ -318,9 +328,12 @@ async function cargarAgenda() {
   try {
     [citas, franjas] = await Promise.all([leerHoja("citas"), leerHoja("agenda")]);
   } catch (e) {
+    if (turno !== turnoAgenda) return;
     agendaResumen.textContent = "No se pudo leer la hoja. Revisa que esté compartida como lector para cualquier persona con el enlace.";
     return;
   }
+  if (turno !== turnoAgenda) return;
+  agendaLista.innerHTML = "";
   citas = citas.filter((c) => c.fecha === fecha);
   franjas = franjas.filter((f) => f.fecha === fecha);
 
